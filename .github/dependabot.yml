@@ -22,7 +22,7 @@ updates:
       actions:
         patterns: ["*"]
     ignore:
-      # publish.yml releases three packages with v1.1.0's per-package inputs, which later versions
+      # The release-package action (used by publish.yml for three packages) relies on v1.1.0's per-package inputs, which later versions
       # removed (and a removed dry-run input would be ignored, releasing for real). Move this only when
       # the release flow is reworked.
       - dependency-name: "awalsh128/npm-publish-strict"

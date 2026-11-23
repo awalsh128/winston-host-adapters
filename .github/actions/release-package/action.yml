@@ -1,0 +1,83 @@
+name: "Release package"
+description: >-
+  Releases one workspace package with awalsh128/npm-publish-strict, adds its npm URL to the GitHub
+  Release, then restores the tracked files so the next package installs from the committed tree.
+
+# The action is pinned to v1.1.0, the first release with the tag-format, commit-paths and
+# pin-dependencies inputs. Don't move the pin: later versions release one package at the
+# repository root and no longer have working-directory, tag-format, commit-paths,
+# pin-dependencies or dry-run. An unknown input is only a warning, so a dry run would then
+# release for real. Dependabot ignores this action for that reason (.github/dependabot.yml).
+
+inputs:
+  package:
+    description: "Directory name under packages/, which is also the tag prefix (<package>-v<version>)."
+    required: true
+  pin-dependencies:
+    description: "Internal dependencies to pin at their latest release, as npm-publish-strict takes them."
+    required: false
+    default: ""
+  dry-run:
+    description: "Run the release without publishing anything or pushing tags."
+    required: false
+    default: "false"
+  baseline-commit:
+    description: "Last commit without a Conventional Commit message, passed to npm-publish-strict."
+    required: true
+  git-credentials:
+    description: "Credentials for pushing the tag."
+    required: true
+  github-token:
+    description: "Token for the GitHub Release."
+    required: true
+
+outputs:
+  version:
+    description: "Released version; empty when nothing was released."
+    value: ${{ steps.release.outputs.version }}
+
+runs:
+  using: "composite"
+  steps:
+    # Each package is released on its own: its tag format, the commits that touch it, and its
+    # internal dependencies pinned to their latest releases. The step checks the release
+    # preconditions, then runs semantic-release with the action's config: tag, GitHub Release and
+    # npm publish (main and staging). It sets the `version` output when it releases.
+    - name: Release
+      id: release
+      uses: awalsh128/npm-publish-strict@cee67e7616c8f6dbf81b9a2bf098cdfbd518a2fa # v1.1.0
+      with:
+        working-directory: packages/${{ inputs.package }}
+        tag-format: ${{ inputs.package }}-v${version}
+        commit-paths: packages/${{ inputs.package }}
+        pin-dependencies: ${{ inputs.pin-dependencies }}
+        dry-run: ${{ inputs.dry-run }}
+        baseline-commit: ${{ inputs.baseline-commit }}
+        git-credentials: ${{ inputs.git-credentials }}
+        github-token: ${{ inputs.github-token }}
+
+    # The action's semantic-release config writes the release notes and can't be changed here, so
+    # the npm URL is appended afterwards. Dry runs and runs that release nothing have an empty
+    # `version` output and are skipped.
+    - name: Add npm URL to the GitHub Release
+      if: ${{ steps.release.outputs.version != '' }}
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        PACKAGE: ${{ inputs.package }}
+        VERSION: ${{ steps.release.outputs.version }}
+      run: |
+        set -euo pipefail
+        tag="${PACKAGE}-v${VERSION}"
+        name="$(jq -r .name "packages/${PACKAGE}/package.json")"
+        notes="$(gh release view "$tag" --json body --jq .body)"
+        printf '%s\n\n**npm:** https://www.npmjs.com/package/%s/v/%s\n' "$notes" "$name" "$VERSION" > "$RUNNER_TEMP/notes.md"
+        gh release edit "$tag" --notes-file "$RUNNER_TEMP/notes.md"
+
+    # semantic-release writes the released version into the package's package.json. Put every
+    # tracked file back so the next package installs from the committed tree, where the internal
+    # dependencies and the lockfile still match. Build output and node_modules are untracked, so
+    # they stay.
+    - name: Restore tracked files
+      shell: bash
+      run: git checkout -- .
