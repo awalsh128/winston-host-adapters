@@ -2,7 +2,8 @@ name: Publish
 
 # Releases each package of this repository independently, always gated by CI:
 # - staging: nightly.yml starts this when staging has npm changes, releasing a candidate
-#   (e.g. winston-host-v1.2.0-rc.1) to npm under the `rc` dist-tag, as a tag and as a GitHub prerelease.
+#   (e.g. winston-host-v1.2.0-rc.1) as a tag and a GitHub prerelease only; npm-publish-strict
+#   publishes to npm from main alone.
 # - main: promote.yml starts this after fast-forwarding main to a CI-passed staging commit,
 #   releasing an official version (e.g. winston-host-v1.2.0) and publishing it to npm.
 # - Manual and nightly runs first require a successful CI run for the commit.
@@ -78,66 +79,37 @@ jobs:
       - name: Build
         run: npm run build
 
-      # Each package is released on its own: its tag format, the commits that touch it, and its
-      # internal dependencies pinned to their latest releases. Order follows the dependencies, so a
-      # package never publishes before what it depends on, and a failure stops the rest.
-      # Each step checks the release preconditions, then runs semantic-release with the action's
-      # config: tag, GitHub Release and npm publish (main and staging). It sets the `version` output
-      # when it releases. baseline-commit is the last commit without a Conventional Commit message
-      # (the initial import), which predates every release tag, so it never affected versioning; it
-      # only keeps the commit-messages check from failing on it.
-      #
-      # The action is pinned to v1.1.0, the first release with the tag-format, commit-paths and
-      # pin-dependencies inputs. Don't move the pin: later versions release one package at the
-      # repository root and no longer have working-directory, tag-format, commit-paths,
-      # pin-dependencies or dry-run. An unknown input is only a warning, so a dry run would then
-      # release for real. Dependabot ignores this action for that reason (.github/dependabot.yml).
+      # Packages release in dependency order, so a package never publishes before what it depends
+      # on, and a failure stops the rest. baseline-commit is the last commit without a Conventional
+      # Commit message (the initial import), which predates every release tag, so it never affected
+      # versioning; it only keeps the commit-messages check from failing on it. The action pin and
+      # the steps around the release are in .github/actions/release-package.
       - name: Release winston-host
         id: host
-        uses: awalsh128/npm-publish-strict@cee67e7616c8f6dbf81b9a2bf098cdfbd518a2fa # v1.1.0
+        uses: ./.github/actions/release-package
         with:
-          working-directory: packages/winston-host
-          tag-format: winston-host-v${version}
-          commit-paths: packages/winston-host
+          package: winston-host
           dry-run: ${{ inputs.dry-run || 'false' }}
           baseline-commit: 90bc54b09d361f1d080b40a91815c6b7381a4d06
           git-credentials: x-access-token:${{ steps.octo-sts.outputs.token }}
           github-token: ${{ github.token }}
 
-      # semantic-release writes the released version into the package's package.json. Put every
-      # tracked file back so the next package installs from the committed tree, where the internal
-      # dependencies and the lockfile still match. Build output and node_modules are untracked, so
-      # they stay.
-      - name: Restore package manifests after winston-host
-        run: git checkout -- .
-
       - name: Release winston-vscode
         id: vscode
-        uses: awalsh128/npm-publish-strict@cee67e7616c8f6dbf81b9a2bf098cdfbd518a2fa # v1.1.0
+        uses: ./.github/actions/release-package
         with:
-          working-directory: packages/winston-vscode
-          tag-format: winston-vscode-v${version}
-          commit-paths: packages/winston-vscode
+          package: winston-vscode
           pin-dependencies: "@awalsh128/winston-host=winston-host-v${version}"
           dry-run: ${{ inputs.dry-run || 'false' }}
           baseline-commit: 90bc54b09d361f1d080b40a91815c6b7381a4d06
           git-credentials: x-access-token:${{ steps.octo-sts.outputs.token }}
           github-token: ${{ github.token }}
 
-      # semantic-release writes the released version into the package's package.json. Put every
-      # tracked file back so the next package installs from the committed tree, where the internal
-      # dependencies and the lockfile still match. Build output and node_modules are untracked, so
-      # they stay.
-      - name: Restore package manifests after winston-vscode
-        run: git checkout -- .
-
       - name: Release winston-github-actions
         id: actions
-        uses: awalsh128/npm-publish-strict@cee67e7616c8f6dbf81b9a2bf098cdfbd518a2fa # v1.1.0
+        uses: ./.github/actions/release-package
         with:
-          working-directory: packages/winston-github-actions
-          tag-format: winston-github-actions-v${version}
-          commit-paths: packages/winston-github-actions
+          package: winston-github-actions
           pin-dependencies: "@awalsh128/winston-host=winston-host-v${version}"
           dry-run: ${{ inputs.dry-run || 'false' }}
           baseline-commit: 90bc54b09d361f1d080b40a91815c6b7381a4d06
