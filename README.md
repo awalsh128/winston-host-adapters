@@ -76,6 +76,23 @@ In a VS Code extension, see the [`winston-vscode` README](packages/winston-vscod
 | [`@awalsh128/winston-vscode`](packages/winston-vscode#readme)                 | VS Code extensions: `ExtensionLogger`, `OutputChannelTransport`, `forDocument`. | `npm install @awalsh128/winston-vscode`         |
 | [`@awalsh128/winston-github-actions`](packages/winston-github-actions#readme) | GitHub Actions: annotations (also via the Checks API), groups, secret masking.  | `npm install @awalsh128/winston-github-actions` |
 
+## Do you need these?
+
+Not always. If your host just shows what goes to stdout, plain Winston does the job. A workflow log
+shows whatever `Console` writes to stdout:
+
+```ts
+import winston from "winston";
+
+const logger = winston.createLogger({
+  level: process.env.RUNNER_DEBUG === "1" ? "debug" : "info",
+  transports: [new winston.transports.Console()],
+});
+```
+
+Use these packages when the host has its own log surface that Winston doesn't know about: annotations,
+groups and secret masking in a workflow log, or a VS Code output channel whose level users can change.
+
 ## Writing an adapter
 
 An adapter implements `Host` from `@awalsh128/winston-host` and passes it to `HostLogger`:
