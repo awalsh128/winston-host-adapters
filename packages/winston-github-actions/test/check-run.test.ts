@@ -50,6 +50,17 @@ describe("CheckRunTransport", () => {
   });
   afterEach(() => logger.dispose());
 
+  it("annotates the plain message when the format option is explicitly undefined", async () => {
+    const own = new CheckRunTransport({ octokit, target, format: undefined });
+    const ownLogger = new ActionsLogger({ core: quietCore, env: {}, transports: [own] });
+    ownLogger.forLocation({ path: "src/a.ts", line: 3 }).error("bad");
+    await flush();
+    await own.flush();
+    ownLogger.dispose();
+
+    expect(octokit.calls[0]!.params.output.annotations[0].message).to.equal("bad");
+  });
+
   it("reports located errors and warnings as one check run", async () => {
     logger.forLocation({ path: "src/a.ts", line: 3, endLine: 6 }).error("bad");
     logger.forLocation({ path: "src/b.ts", line: 9, column: 4 }).warn("iffy");

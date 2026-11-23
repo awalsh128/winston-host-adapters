@@ -85,7 +85,7 @@ export class CheckRunTransport extends TransportStream {
 
   constructor(opts: CheckRunTransportOptions) {
     // Without a format, Winston writes each line as JSON, which would become the annotation's message.
-    super({ format: winston.format.printf(plainFormat), ...opts });
+    super({ ...opts, format: opts.format ?? winston.format.printf(plainFormat) });
     this.octokit = opts.octokit;
     this.target = opts.target ?? targetFromEnv();
     this.name = opts.name ?? "Log annotations";
