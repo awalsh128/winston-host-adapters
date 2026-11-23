@@ -16,6 +16,13 @@ npm workspaces monorepo of Winston logging adapters. `CONTRIBUTING.md` has the f
 - Packages ship as ESM.
 - Commit messages and PR titles follow Conventional Commits; semantic-release derives versions from them. PRs are squash-merged.
 
+## Does it belong here?
+
+These packages exist for what Winston cannot do alone: bridging to a host's own log output and
+levels. Where plain Winston does the job with its own features, using it directly is the better
+answer. Use the `scope-check` skill before adding an adapter, transport, format, helper or export,
+and when reviewing or extending existing ones.
+
 ## Warnings
 
 - Never bump versions. `package.json` keeps the placeholder `0.0.0-semantically-released`; releases never commit.
