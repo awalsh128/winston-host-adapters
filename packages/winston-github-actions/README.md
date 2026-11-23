@@ -43,6 +43,21 @@ logger.debugLazy(() => `Config: ${JSON.stringify(config)}`); // only built when 
 The level is `trace` when `core.isDebug()`, `RUNNER_DEBUG=1`, or `ACTIONS_STEP_DEBUG` is `true` or
 `1`, and `info` otherwise. It is read once when the logger is created.
 
+## Finding the location automatically
+
+Pass `discoverLocation: true` and `error` and `warn` lines without a location get the file, line and
+column of the code that logged them, so the annotation points at your source:
+
+```ts
+const logger = new ActionsLogger({ discoverLocation: true });
+logger.error("Block is not sorted"); // annotated at this line
+```
+
+Paths are relative to `GITHUB_WORKSPACE`; a caller outside it gets no annotation location. An explicit
+`forLocation()` always wins. It reads the call stack, so a bundled action points at its bundle unless
+run with `--enable-source-maps`. In a plain Winston logger, add `callSiteLocation()` to the logger's
+`format`.
+
 ## Groups and secrets
 
 ```ts

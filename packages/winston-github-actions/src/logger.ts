@@ -9,6 +9,7 @@ import {
   type HostLoggerOptions,
 } from "@awalsh128/winston-host";
 import * as actionsCore from "@actions/core";
+import { callSiteLocation } from "./call-site.js";
 import type { Core } from "./core.js";
 import { ActionsTransport } from "./transport.js";
 
@@ -26,6 +27,12 @@ export interface ActionsLoggerOptions extends HostLoggerOptions {
   core?: Core;
   /** The environment to read the debug settings from. Defaults to `process.env`. */
   env?: NodeJS.ProcessEnv;
+  /**
+   * Gives `error` and `warn` lines that have no location the file and line of the code that logged
+   * them, so annotations point at the source. Paths are relative to `GITHUB_WORKSPACE`; callers
+   * outside it get no location. Off by default.
+   */
+  discoverLocation?: boolean;
 }
 
 /**
@@ -72,6 +79,10 @@ export class ActionsLogger extends HostLogger {
     };
     super(host, { format: options.format ?? plainFormat, transports: options.transports });
     this.core = core;
+    if (options.discoverLocation) {
+      // Logger formats run inside the logging call, while the caller is still on the stack.
+      this.format = callSiteLocation({ workspace: (options.env ?? process.env).GITHUB_WORKSPACE });
+    }
   }
 
   /**
