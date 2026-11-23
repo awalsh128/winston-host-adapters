@@ -115,7 +115,8 @@ Every release is gated by CI on the exact commit being released:
   step, through `@semantic-release/exec`, so a docs failure stops the release before it is tagged.
   Only official releases deploy them to GitHub Pages; candidates and runs that release nothing
   leave the site unchanged. Pages must be set to deploy from GitHub Actions, and the `github-pages`
-  environment restricted to `main`.
+  environment restricted to `main`. To redeploy the docs without a release (a `docs:` commit releases
+  nothing), run the [Docs workflow](.github/workflows/docs.yml) on `main`.
 - Manual runs first require a successful CI run for the commit. Start one with `dry-run: true` to
   preview the next version without tagging:
 
