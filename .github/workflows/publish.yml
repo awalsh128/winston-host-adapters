@@ -2,7 +2,8 @@ name: Publish
 
 # Releases each package of this repository independently, always gated by CI:
 # - staging: nightly.yml starts this when staging has npm changes, releasing a candidate
-#   (e.g. winston-host-v1.2.0-rc.1) to npm under the `rc` dist-tag, as a tag and as a GitHub prerelease.
+#   (e.g. winston-host-v1.2.0-rc.1) as a tag and a GitHub prerelease only; npm-publish-strict
+#   publishes to npm from main alone.
 # - main: promote.yml starts this after fast-forwarding main to a CI-passed staging commit,
 #   releasing an official version (e.g. winston-host-v1.2.0) and publishing it to npm.
 # - Manual and nightly runs first require a successful CI run for the commit.

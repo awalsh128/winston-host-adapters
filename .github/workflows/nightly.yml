@@ -1,7 +1,8 @@
 # Starts a nightly release candidate when staging has npm package changes since its last release.
 #
-# Candidates are published to npm under the `rc` dist-tag, so they must run publish.yml on its own:
-# npm trusted publishing trusts that workflow file started directly, not through another workflow.
+# Candidates are a tag and a GitHub prerelease only, not published to npm. They still start
+# publish.yml on its own, the way promote.yml does for official releases, where npm trusted
+# publishing trusts that workflow file started directly, not through another workflow.
 # Schedules only run on the default branch, so this runs on main and starts publish.yml on staging.
 # publish.yml still requires CI to have passed on the commit, and semantic-release still releases
 # nothing when the commits since the last release call for no version (docs, ci, chore, ...).

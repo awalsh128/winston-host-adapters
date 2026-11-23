@@ -57,10 +57,11 @@ runs:
         github-token: ${{ inputs.github-token }}
 
     # The action's semantic-release config writes the release notes and can't be changed here, so
-    # the npm URL is appended afterwards. Dry runs and runs that release nothing have an empty
-    # `version` output and are skipped.
+    # the npm URL is appended afterwards. Only main publishes to npm (staging candidates are a tag and
+    # a GitHub prerelease), so only main gets the link. Dry runs and runs that release nothing have an
+    # empty `version` output and are skipped.
     - name: Add npm URL to the GitHub Release
-      if: ${{ steps.release.outputs.version != '' }}
+      if: ${{ steps.release.outputs.version != '' && github.ref == 'refs/heads/main' }}
       shell: bash
       env:
         GH_TOKEN: ${{ inputs.github-token }}

@@ -106,9 +106,9 @@ Every release is gated by CI on the exact commit being released:
   still needs CI to have passed on `staging`'s latest commit, and semantic-release still skips it
   when no commit since the last release calls for a version.
 - Each release candidate increments the `rc` number until the version is promoted. Candidates get a
-  tag, a GitHub prerelease and an npm publish under the `rc` dist-tag, so `npm install
-@awalsh128/winston-vscode` still gets the official release.
-- Releases publish to npm through trusted publishing, with provenance. npm trusts only
+  tag and a GitHub prerelease only; npm-publish-strict publishes to npm from `main` alone, so a
+  candidate is not on npm and a GitHub release for one has no npm link.
+- Official releases publish to npm through trusted publishing, with provenance. npm trusts only
   [publish.yml](.github/workflows/publish.yml) started on its own, which is how both the nightly
   workflow and promote start it.
 - Every release builds the API docs (each package's `typedoc.json`; the docs site is rebuilt whole) in semantic-release's `prepare`
